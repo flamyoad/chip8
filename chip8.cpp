@@ -1,11 +1,13 @@
 #include "chip8.h"
 
 constexpr uint32_t START_ADDRESS = 0x200; // 0x000 to 0x1FF is reserved for system.
+constexpr uint32_t FONTSET_START_ADDRESS = 0x50;
 constexpr uint32_t FONTSET_SIZE = 80;
 
 Chip8::Chip8() {
     pc = START_ADDRESS; // Initialize program counter to 0x200.
 
+    // Notice that only the upper half (high nibble) has value
     uint8_t fontset[FONTSET_SIZE] = {
 	    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 	    0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -27,7 +29,7 @@ Chip8::Chip8() {
 
     // Load the font into memory
     for (int i = 0; i < FONTSET_SIZE; ++i)  {
-        memory[i] = fontset[i];
+        memory[FONTSET_START_ADDRESS + i] = fontset[i];
     }
 }
 
@@ -210,9 +212,157 @@ void Chip8::OP_8XYE() {
 
 // Skips the next instruction if VX does not equal VY. (Usually the next instruction is a jump to skip a code block);
 void Chip8::OP_9XY0() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    uint8_t VY = (opcode & 0x00F0u) >> 4u;
 
+    if (registers[VX] != registers[VY]) {
+        pc += 2;
+    }
 }
 
+// Sets I to the address NNN.
+void Chip8::OP_ANNN() {
+    uint16_t address = opcode & 0x0FFFu;
+    index = address;
+}
+
+// Jumps to the address NNN plus V0.
+void Chip8::OP_BNNN() {
+    uint16_t address = opcode & 0x0FFFu;
+    pc = registers[0] + address;
+}
+
+// Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN.
+void Chip8::OP_CXNN() {
+    
+}
+
+// draw(Vx, Vy, N)	
+void Chip8::OP_DXYN() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    uint8_t VY = (opcode & 0x00F0u) >> 4u;
+    uint8_t N = opcode & 0x000Fu;
+
+    uint8_t posX = registers[VX] % 64;
+    uint8_t posY = registers[VY] % 32;
+    
+    for (int row = 0; row < N; ++row) {
+        uint8_t spriteByte = memory[index + row];
+        for (int col = 0; col < 8; ++col) {
+            uint8_t spriteBit = spriteByte & (0x80u >> col); // Checking from bit individually from 0~7
+            uint32_t displayBit = display[(posY + row) * 64 + (posX + col)];
+
+            if (spriteBit == 1) {
+                if (displayBit == 1) {
+                    registers[0xF] = 1;
+                }
+                display[(posY + row) * 64 + (posX + col)] ^= 0xFFFFFFFF;
+            }
+        }
+    }
+}
+
+// Skips the next instruction if the key stored in VX is pressed. (Usually the next instruction is a jump to skip a code block);
+void Chip8::OP_EX9E() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    uint8_t key = registers[VX];
+
+    if (keypad[key] == 1) {
+        pc += 2;
+    }
+}
+
+// Skips the next instruction if the key stored in VX is not pressed. (Usually the next instruction is a jump to skip a code block);
+void Chip8::OP_EXA1() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    uint8_t key = registers[VX];
+
+    if (keypad[key] != 1) {
+        pc += 2;
+    }
+}
+
+// Sets VX to the value of the delay timer.
+void Chip8::OP_FX07() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    registers[VX] = delay_timer;
+}
+
+// A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event);
+void Chip8::OP_FX0A() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+
+    for (int i = 0; i < 16; ++i) {
+        if (keypad[i] == 1) {
+            registers[VX] = keypad[i];
+            pc += 2;
+        }
+    }
+}
+
+// Sets the delay timer to VX.
+void Chip8::OP_FX15() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    delay_timer = registers[VX];
+}
+
+// Sets the sound timer to VX.
+void Chip8::OP_FX18() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    sound_timer = registers[VX];
+}
+
+// Adds VX to I. VF is not affected.
+void Chip8::OP_FX1E() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    index += registers[VX];
+}
+
+// Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font.
+// todo: check whether to use VX or registers[VX]
+void Chip8::OP_FX29() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    index = memory[FONTSET_START_ADDRESS + 5 * VX];
+}
+
+// Stores the binary-coded decimal representation of VX, with the most significant of three digits 
+// at the address in I, the middle digit at I plus 1, and the least significant digit at I plus 2. 
+// (In other words, take the decimal representation of VX, place the hundreds digit in memory at location in I,
+// the tens digit at location I+1, and the ones digit at location I+2.);
+void Chip8::OP_FX33() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    uint8_t value = registers[VX];
+
+
+    // Least-significant bit
+    memory[index + 2] = value % 10;
+    value /= 10;
+
+    // Middle
+    memory[index + 1] = value % 10;
+    value /= 10;
+
+    // Most-significant-bit
+    memory[index] = value; 
+}
+
+// Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 
+// for each value written, but I itself is left unmodified.
+void Chip8::OP_FX55() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    for (uint8_t i = 0; i <= VX; ++i) {
+        memory[index + i] = registers[i];
+    }
+}
+
+// Fills V0 to VX (including VX) with values from memory starting at address I. 
+// The offset from I is increased by 1 for each value written, but I itself is left unmodified
+void Chip8::OP_FX65() {
+    uint8_t VX = (opcode & 0x0F00u) >> 8u;
+    for (uint8_t i = 0; i <= VX; ++i) {
+        registers[i] = memory[index + 1];
+    }
+}
 
 
 
