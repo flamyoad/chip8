@@ -4,7 +4,6 @@
 #include "chip8.h"
  
 int main() {
-    // Chip8 chip8;
 
     uint8_t value = 0xFF;
     uint8_t msb = value & 0x80 >> 7u;

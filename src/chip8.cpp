@@ -1,4 +1,5 @@
 #include "chip8.h"
+#include <cstring>   
 
 constexpr uint32_t START_ADDRESS = 0x200; // 0x000 to 0x1FF is reserved for system.
 constexpr uint32_t FONTSET_START_ADDRESS = 0x50;
