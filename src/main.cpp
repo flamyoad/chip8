@@ -7,19 +7,8 @@
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
-
-void sdl2_init();
  
 int main(int argc, char** argv) {
-    Chip8 *chip8 = new Chip8();
-    chip8->init();
-
-    sdl2_init();
-
-    return 0;
-}
-
-void sdl2_init() {
     SDL_Window* window = NULL;
     SDL_Surface* surface = NULL;
 
@@ -47,5 +36,7 @@ void sdl2_init() {
         //Quit SDL subsystems
         SDL_Quit();
     }
+
+    return 0;
 }
 
