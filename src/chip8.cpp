@@ -6,8 +6,6 @@ constexpr uint32_t FONTSET_START_ADDRESS = 0x50;
 constexpr uint32_t FONTSET_SIZE = 80;
 
 Chip8::Chip8() {
-    pc = START_ADDRESS; // Initialize program counter to 0x200.
-
     // Notice that only the upper half (high nibble) has value
     uint8_t fontset[FONTSET_SIZE] = {
 	    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -34,6 +32,13 @@ Chip8::Chip8() {
     }
 }
 
+void Chip8::init() {
+    pc = START_ADDRESS;
+    opcode = 0;
+    index = 0;
+    sp = 0;
+}
+
 void Chip8::load_rom(char const *file_path) {
     std::ifstream file(file_path, std::ios::binary);
 
@@ -57,15 +62,181 @@ void Chip8::load_rom(char const *file_path) {
     }
 }
 
-// Clears the screen.
-void Chip8::OP_00EE() {
-    memset(display, 0, sizeof(display));
+void Chip8::emulate_cycle() {
+    opcode = memory[pc] << 8 | memory[pc + 1];
+
+    switch (opcode & 0xF000) {
+        case 0x0000:
+            switch (opcode & 0x000F) {
+                case 0x0000: 
+                    OP_00EE(); 
+                    break;
+
+                case 0x000E:
+                    OP_00EE(); 
+                    break;
+            }
+        break;
+
+        case 0x1000:
+            OP_1NNN();
+            break;
+
+        case 0x2000:
+            OP_2NNN();
+            break;
+
+        case 0x3000:
+            OP_3XNN();
+            break;
+
+        case 0x4000:
+            OP_4XNN();
+            break;
+
+        case 0x5000:
+            OP_5XY0();
+            break;
+
+        case 0x6000:
+            OP_6XNN();
+            break;
+
+        case 0x7000:
+            OP_7XNN();
+            break;
+
+        case 0x8000:
+            switch (opcode & 0x000F) {
+                case 0x0000:
+                    OP_8XY0(); 
+                    break;
+                
+                case 0x0001:
+                    OP_8XY1();
+                    break;
+
+                case 0x0002:
+                    OP_8XY2();
+                    break;
+
+                case 0x0003:
+                    OP_8XY3();
+                    break;
+
+                case 0x0004:
+                    OP_8XY4();
+                    break;
+
+                case 0x0005:
+                    OP_8XY5();
+                    break; 
+
+                case 0x0006:
+                    OP_8XY6();
+                    break;    
+
+                case 0x0007:
+                    OP_8XY7();
+                    break;    
+
+                case 0x000E:
+                    OP_8XYE();
+                    break;                       
+            }
+            break;
+
+            case 0x9000:
+                OP_9XY0();
+                break;
+
+            case 0xA000:
+                OP_ANNN();
+                break;
+
+            case 0xB000:
+                OP_BNNN();
+                break;
+            
+            case 0xC000:
+                OP_CXNN();
+                break;
+
+            case 0xD000:
+                OP_DXYN();
+                break;
+            
+            case 0xE000:
+                switch (opcode & 0x00FF) {
+                    case 0x009E:
+                        OP_EX9E();
+                        break;
+
+                    case 0x0A1:
+                        OP_EXA1();
+                        break;
+                }
+            break;
+
+            case 0xF000:
+                switch (opcode & 0x00FF) {
+                    case 0x0007:
+                        OP_FX07();
+                        break;
+
+                    case 0x000A:
+                        OP_FX0A();
+                        break;
+
+                    case 0x0015:
+                        OP_FX15();
+                        break;
+
+                    case 0x0018:
+                        OP_FX18();
+                        break;
+
+                    case 0x001E:
+                        OP_FX1E();
+                        break;
+
+                    case 0x0029:
+                        OP_FX29();
+                        break;
+
+                    case 0x0033:
+                        OP_FX33();
+                        break;
+
+                    case 0x0055:
+                        OP_FX55();
+                        break;    
+
+                    case 0x0065:
+                        OP_FX65();
+                        break;                                                                   
+                }
+            break;
+
+    default:
+        break;
+    }
+
+    // Increment program counter by 2
+    if ((opcode & 0xF000) != 0x2000) {
+        pc += 2;
+    }
 }
 
 // Returns from a subroutine. 
-void Chip8::OP_OOE0() {
+void Chip8::OP_00EE() {
     --sp;
     pc = stack[sp];
+}
+
+// Clears the screen.
+void Chip8::OP_OOE0() {
+    memset(display, 0, sizeof(display));
 }
 
 // Jumps to address NNN.
@@ -76,10 +247,10 @@ void Chip8::OP_1NNN() {
 
 // Calls subroutine at NNN.
 void Chip8::OP_2NNN() {
-    uint16_t subroutineAddress = pc & 0x0FFFu;
+    uint16_t subroutine_address = pc & 0x0FFFu;
     stack[sp] = pc;
     ++sp;
-    pc = subroutineAddress;
+    pc = subroutine_address;
 }
 
 // Skips the next instruction if VX equals NN. (Usually the next instruction is a jump to skip a code block);
@@ -248,13 +419,13 @@ void Chip8::OP_DXYN() {
     uint8_t posY = registers[VY] % 32;
     
     for (int row = 0; row < N; ++row) {
-        uint8_t spriteByte = memory[index + row];
+        uint8_t sprite_byte = memory[index + row];
         for (int col = 0; col < 8; ++col) {
-            uint8_t spriteBit = spriteByte & (0x80u >> col); // Checking from bit individually from 0~7
-            uint32_t displayBit = display[(posY + row) * 64 + (posX + col)];
+            uint8_t sprite_bit = sprite_byte & (0x80u >> col); // Checking from bit individually from 0~7
+            uint32_t display_bit = display[(posY + row) * 64 + (posX + col)];
 
-            if (spriteBit == 1) {
-                if (displayBit == 1) {
+            if (sprite_bit == 1) {
+                if (display_bit == 1) {
                     registers[0xF] = 1;
                 }
                 display[(posY + row) * 64 + (posX + col)] ^= 0xFFFFFFFF;

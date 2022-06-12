@@ -24,7 +24,9 @@ class Chip8 {
 
     public:
         Chip8();
+        void init();
         void load_rom(char const *file_path);
+        void emulate_cycle();
 
         // Opcodes (35 total)
         void OP_OOE0();
