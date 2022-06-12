@@ -44,5 +44,5 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-# Cmake executable name in build dir
-Chip8
+# Ignore build folder
+/build/*
