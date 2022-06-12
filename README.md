@@ -6,10 +6,13 @@ mkdir build
 cd build
 cmake ..
 ```
+
+#### Install SDL2
 ```
 apt-cache search libsdl2
 sudo apt-get install libsdl2-dev
 ```
+You should be able to find `SDL.h` in `/usr/include/SDL2`
 
 ### Build it
 ```
