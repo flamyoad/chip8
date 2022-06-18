@@ -29,6 +29,8 @@ cd build
 # References
 SDL2: http://lazyfoo.net/tutorials/SDL/index.php
 
+SDL2 API: https://wiki.libsdl.org/CategoryAPI / https://wiki.libsdl.org/APIByCategory
+
 https://en.wikipedia.org/wiki/CHIP-8
 
 https://austinmorlan.com/posts/chip8_emulator/
