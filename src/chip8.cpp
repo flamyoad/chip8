@@ -409,29 +409,31 @@ void Chip8::OP_CXNN() {
     
 }
 
-// draw(Vx, Vy, N)	
+// Draw(Vx, Vy, N)	
 void Chip8::OP_DXYN() {
-    uint8_t VX = (opcode & 0x0F00u) >> 8u;
-    uint8_t VY = (opcode & 0x00F0u) >> 4u;
-    uint8_t N = opcode & 0x000Fu;
-
-    uint8_t posX = registers[VX] % 64;
-    uint8_t posY = registers[VY] % 32;
-    
-    for (int row = 0; row < N; ++row) {
-        uint8_t sprite_byte = memory[index + row];
-        for (int col = 0; col < 8; ++col) {
-            uint8_t sprite_bit = sprite_byte & (0x80u >> col); // Checking from bit individually from 0~7
-            uint32_t display_bit = display[(posY + row) * 64 + (posX + col)];
-
-            if (sprite_bit == 1) {
-                if (display_bit == 1) {
-                    registers[0xF] = 1;
-                }
-                display[(posY + row) * 64 + (posX + col)] ^= 0xFFFFFFFF;
-            }
-        }
-    }
+	uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t Vy = (opcode & 0x00F0u) >> 4u;
+	uint8_t height = opcode & 0x000Fu;
+	// Wrap if going beyond screen boundaries
+	uint8_t x_pos = registers[Vx] % 64;
+	uint8_t y_pos = registers[Vy] % 32;
+	registers[0xF] = 0;
+	for (unsigned int row = 0; row < height; ++row) {
+		uint8_t sprite_byte = memory[index + row];
+		for (unsigned int col = 0; col < 8; ++col) {
+			uint8_t sprite_pixel = sprite_byte & (0x80u >> col);
+			uint32_t* screen_pixel = &display[(y_pos + row) * 64 + (x_pos + col)];
+			// Sprite pixel is on
+			if (sprite_pixel) {
+				// Screen pixel also on - collision
+				if (*screen_pixel == 0xFFFFFFFF) {
+					registers[0xF] = 1;
+				}
+				// Effectively XOR with the sprite pixel
+				*screen_pixel ^= 0xFFFFFFFF;
+			}
+		}
+	}
 }
 
 // Skips the next instruction if the key stored in VX is pressed. (Usually the next instruction is a jump to skip a code block);

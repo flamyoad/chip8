@@ -5,11 +5,8 @@
 #include "chip8.cpp"
 
 //Screen dimension constants
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-const int TEXTURE_WIDTH = 640;
-const int TEXTURE_HEIGHT = 480;
+const int SCREEN_WIDTH = 32;  //32
+const int SCREEN_HEIGHT = 64; // 64
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -33,9 +30,10 @@ int main(int argc, char* argv[]) {
     Chip8 *chip8 = new Chip8();
     chip8->init();
     chip8->load_rom(rom_path);
+    std::cout << rom_path << std::endl;
 
-    // Should be defined by user in argc. Hard code it for now.
-    int cycle_delay = 10;
+    // In milliseconds. Should be defined by user in argc. Hard code it for now.
+    int cycle_delay = 50;
 
     int video_pitch = sizeof(chip8->display[0]) * SCREEN_WIDTH;
 
@@ -48,7 +46,7 @@ int main(int argc, char* argv[]) {
         quit = accept_input(chip8->keypad);
 
         auto current_time = std::chrono::high_resolution_clock::now();
-		float dt = std::chrono::duration<float, std::chrono::milliseconds::period>(current_time - last_cycle_time).count();
+        float dt = std::chrono::duration<float, std::chrono::milliseconds::period>(current_time - last_cycle_time).count();
 
         if (dt > cycle_delay) {
             last_cycle_time = current_time;
@@ -61,14 +59,15 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-// abstract into a class 
+// abstract the implementation into a class (OOP!)
 bool initialize_window() {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         log_SDL_error("SDL_Init has failed");
         return false;
     }
 
-    window = SDL_CreateWindow("Chip8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);    
+    // SCREEN_WIDTH and SCREEN_HEIGHT can be multipled by scale factor of X. Implement it in argc 
+    window = SDL_CreateWindow("Chip8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 24, SCREEN_HEIGHT * 12, SDL_WINDOW_SHOWN);    
     if (window == NULL) {
         log_SDL_error("Failed to create window");
         return false;
@@ -80,7 +79,8 @@ bool initialize_window() {
         return false;
     }
 
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    // Texture will always be 32x64
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
     if (texture == NULL) {
         log_SDL_error("Failed to create texture");
         return false;
@@ -90,10 +90,24 @@ bool initialize_window() {
 }
 
 void update_frame(void const *buffer, int pitch) {
-	SDL_UpdateTexture(texture, nullptr, buffer, pitch);
-	SDL_RenderClear(renderer);
-	SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-	SDL_RenderPresent(renderer);
+    int res;
+    res = SDL_UpdateTexture(texture, nullptr, buffer, pitch);
+    if (res != 0) {
+        log_SDL_error("SDL_UpdateTexture");
+    }
+
+	res = SDL_RenderClear(renderer);
+    if (res != 0) {
+        log_SDL_error("SDL_RenderClear");
+    }
+
+	res = SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+    if (res != 0) {
+        log_SDL_error("SDL_RenderCopy");
+    }
+
+    SDL_RenderPresent(renderer);
+
 }
 
 // Param is array of uint8_t
