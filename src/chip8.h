@@ -2,9 +2,8 @@
 #include <fstream>
 
 class Chip8 {
-    private:
+    public:
         uint8_t memory[4096]; // 4K memory (1 byte = 8 bit)
-
         uint8_t registers[16]; // V0 to VF
         uint16_t index; // Index register
         uint16_t pc; // Program counter
@@ -22,7 +21,6 @@ class Chip8 {
         // 16bit opcode (First instruction in 1byte + Second instruction in 1byte)
         uint16_t opcode;
 
-    public:
         Chip8();
         void init();
         void load_rom(char const *file_path);
