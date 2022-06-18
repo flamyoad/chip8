@@ -1,5 +1,6 @@
 #include "chip8.h"
 #include <cstring>   
+#include <iostream>
 
 constexpr uint32_t START_ADDRESS = 0x200; // 0x000 to 0x1FF is reserved for system.
 constexpr uint32_t FONTSET_START_ADDRESS = 0x50;
@@ -55,7 +56,8 @@ void Chip8::load_rom(char const *file_path) {
 
         // Load ROM content into Chip8 memory, starting from 0x200
         for (int i = 0; i < rom_size; ++i) {
-            memory[START_ADDRESS + 1] = buffer[i];
+            std::cout << buffer[i] << std::endl;
+            memory[START_ADDRESS + i] = buffer[i];
         }
 
         delete[] buffer;
@@ -63,7 +65,14 @@ void Chip8::load_rom(char const *file_path) {
 }
 
 void Chip8::emulate_cycle() {
+
     opcode = memory[pc] << 8 | memory[pc + 1];
+
+    std::cout << "Memory[pc] " << +memory[pc] << std::endl;
+    std::cout << "Memory[pc + 1] " << +memory[pc+1] << std::endl;
+    std::cout << "Opcode: " << +opcode << std::endl;
+
+    pc += 2;
 
     switch (opcode & 0xF000) {
         case 0x0000:
@@ -220,11 +229,6 @@ void Chip8::emulate_cycle() {
 
     default:
         break;
-    }
-
-    // Increment program counter by 2
-    if ((opcode & 0xF000) != 0x2000) {
-        pc += 2;
     }
 }
 
