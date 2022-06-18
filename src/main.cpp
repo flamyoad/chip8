@@ -1,3 +1,4 @@
+// http://lazyfoo.net/tutorials/SDL/02_getting_an_image_on_the_screen/index.php
 #include <iostream>
 #include <string>
 #include <assert.h>
@@ -25,47 +26,74 @@ bool loadMedia();
 
 //Frees media and shuts down SDL
 void close();
+
+void print_SDL_error();
  
 int main(int argc, char** argv) {
-    SDL_Window* window = NULL;
-    SDL_Surface* surface = NULL;
+    if (!init()) {
+        std::cout << "Failed to initialize" << std::endl;
 
-    bool quit = false;
-
-    // Event handler
-    SDL_Event e;
-
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "SDL could not initialize! SDL_Error: " << SDL_GetError();
     } else {
-        window = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-        if (window == NULL) {
-            std::cout << "Window could not be created! SDL_Error " << SDL_GetError();
+        if (!loadMedia()) {
+            std::cout << "Failed to load media" << std::endl;
+        } else {
+            // Blit updates back buffer
+            SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+            
+            // IF thisline code not run, image will not appear
+            // this updates the front buffer
+            SDL_UpdateWindowSurface(gWindow);
         }
-
-        surface = SDL_GetWindowSurface(window);
-        //Fill the surface white
-        SDL_FillRect(surface, NULL, SDL_MapRGB( surface->format, 0xFF, 0xFF, 0xFF ) );
-           
-        //Update the surface
-        SDL_UpdateWindowSurface( window );
-
-        //Wait two seconds
-        SDL_Delay( 2000 );
-
-        //Destroy window
-        SDL_DestroyWindow( window );
-
-        //Quit SDL subsystems
-        SDL_Quit();
+        SDL_Delay(6000);
     }
+
+    close();
 
     return 0;
 }
 
 bool init() {
-    // TODO: continue from here 
-    // http://lazyfoo.net/tutorials/SDL/02_getting_an_image_on_the_screen/index.php
+    bool success = true;
+
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        print_SDL_error();
+        success = false;
+    } else {
+        gWindow = SDL_CreateWindow("SDL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+        if (gWindow == NULL) {
+            print_SDL_error();
+            success = false;
+        } else {
+            gScreenSurface = SDL_GetWindowSurface(gWindow);
+        }
+    }
+
+    return success;
+}
+
+bool loadMedia() {
+    bool success = true;
+
+    gHelloWorld = SDL_LoadBMP("/home/zhenhao-ng/sample_640×426.bmp");
+    if (gHelloWorld == NULL) {
+        std::cout << "Unable to load image " << SDL_GetError() << std::endl;
+        success = false;
+    }  
+    return success;
+}
+
+void close() {
+    SDL_FreeSurface(gHelloWorld);
+    gHelloWorld = NULL;
+
+    SDL_DestroyWindow(gWindow);
+    gWindow = NULL;
+
+    SDL_Quit();
+}
+
+void print_SDL_error() {
+    std::cout << "SDL not initialzied " << SDL_GetError() << std::endl;
 }
 
 
