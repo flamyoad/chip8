@@ -9,14 +9,26 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+enum KeyPressSurfaces {
+	KEY_PRESS_SURFACE_DEFAULT,
+	KEY_PRESS_SURFACE_UP,
+	KEY_PRESS_SURFACE_DOWN,
+	KEY_PRESS_SURFACE_LEFT,
+	KEY_PRESS_SURFACE_RIGHT,
+	KEY_PRESS_SURFACE_TOTAL
+};
+
 //The window we'll be rendering to
 SDL_Window* gWindow = NULL;
 
 //The surface contained by the window
 SDL_Surface* gScreenSurface = NULL;
 
-//The image we will load and show on the screen
-SDL_Surface* gHelloWorld = NULL;
+//The images that correspond to a keypress
+SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
+
+//Current displayed image
+SDL_Surface* gCurrentSurface = NULL;
 
 //Starts up SDL and creates window
 bool init();
@@ -27,8 +39,11 @@ bool loadMedia();
 //Frees media and shuts down SDL
 void close();
 
-void print_SDL_error();
- 
+//Loads individual image
+SDL_Surface* load_surface(const std::string &path);
+
+void print_SDL_error(const std::string &s = "");
+
 int main(int argc, char** argv) {
     if (!init()) {
         std::cout << "Failed to initialize" << std::endl;
@@ -37,14 +52,47 @@ int main(int argc, char** argv) {
         if (!loadMedia()) {
             std::cout << "Failed to load media" << std::endl;
         } else {
-            // Blit updates back buffer
-            SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
-            
-            // IF thisline code not run, image will not appear
-            // this updates the front buffer
-            SDL_UpdateWindowSurface(gWindow);
+
+            bool quit = false;
+
+            gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
+
+            SDL_Event e;
+            while (!quit) {
+                while (SDL_PollEvent(&e) != 0) {
+                    if (e.type == SDL_QUIT) {
+                        quit = true;
+                    } else if (e.type == SDL_KEYDOWN) {
+                        switch (e.key.keysym.sym) {
+                            case SDLK_UP:
+                                gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
+                            break;
+
+                            case SDLK_DOWN:
+                                gCurrentSurface = gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
+                            break; 
+
+                            case SDLK_LEFT:
+                                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_LEFT ];
+                            break;
+
+                            case SDLK_RIGHT:
+                                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_RIGHT ];
+                            break;
+
+                            default:
+                                gCurrentSurface = gKeyPressSurfaces[ KEY_PRESS_SURFACE_DEFAULT ];
+                            break;
+                        }
+                    }
+                }
+			    //Apply the current image
+			    SDL_BlitSurface( gCurrentSurface, NULL, gScreenSurface, NULL );
+			
+			    //Update the surface
+			    SDL_UpdateWindowSurface( gWindow );
+            }
         }
-        SDL_Delay(6000);
     }
 
     close();
@@ -74,17 +122,43 @@ bool init() {
 bool loadMedia() {
     bool success = true;
 
-    gHelloWorld = SDL_LoadBMP("/home/zhenhao-ng/sample_640×426.bmp");
-    if (gHelloWorld == NULL) {
-        std::cout << "Unable to load image " << SDL_GetError() << std::endl;
+    gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] = SDL_LoadBMP("../src/press.bmp");
+    if (gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT] == NULL) {
+        print_SDL_error("Failed load default");
+        success = false;
+    }  
+
+    gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] = SDL_LoadBMP("../src/up.bmp");
+    if (gKeyPressSurfaces[KEY_PRESS_SURFACE_UP] == NULL) {
+        print_SDL_error("Failed load up");
+        success = false;
+    }  
+
+    gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] = SDL_LoadBMP("../src/down.bmp");
+    if (gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN] == NULL) {
+        print_SDL_error("Failed load down");
+        success = false;
+    }  
+
+    gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] = SDL_LoadBMP("../src/left.bmp");
+    if (gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT] == NULL) {
+        print_SDL_error("Failed load left");
+        success = false;
+    }  
+
+    gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] = SDL_LoadBMP("../src/right.bmp");
+    if (gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT] == NULL) {
+        print_SDL_error("Failed load right");
         success = false;
     }  
     return success;
 }
 
 void close() {
-    SDL_FreeSurface(gHelloWorld);
-    gHelloWorld = NULL;
+    for (int i = 0; i < KEY_PRESS_SURFACE_TOTAL; ++i) {
+        SDL_FreeSurface(gKeyPressSurfaces[i]);
+        gKeyPressSurfaces[i] = NULL;
+    }
 
     SDL_DestroyWindow(gWindow);
     gWindow = NULL;
@@ -92,8 +166,22 @@ void close() {
     SDL_Quit();
 }
 
-void print_SDL_error() {
-    std::cout << "SDL not initialzied " << SDL_GetError() << std::endl;
+SDL_Surface* load_surface(const std::string &path) {
+    SDL_Surface* loaded_surface = SDL_LoadBMP(path.c_str());
+    if (loaded_surface == NULL) {
+        print_SDL_error("Unable to load image " + path);
+        return NULL;
+    }
+    return loaded_surface;
+}
+
+// Default argument has to go to function prototypr only
+void print_SDL_error(const std::string &s) {
+    if (s.empty()) {
+        std::cout << SDL_GetError() << std::endl;
+    } else {
+        std::cout << s << " " << SDL_GetError() << std::endl;
+    }
 }
 
 
