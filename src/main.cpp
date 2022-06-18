@@ -5,8 +5,8 @@
 #include "chip8.cpp"
 
 //Screen dimension constants
-const int SCREEN_WIDTH = 32;  //32
-const int SCREEN_HEIGHT = 64; // 64
+const int SCREEN_WIDTH = 64;
+const int SCREEN_HEIGHT = 32;
 
 SDL_Window *window;
 SDL_Renderer *renderer;
@@ -30,7 +30,6 @@ int main(int argc, char* argv[]) {
     Chip8 *chip8 = new Chip8();
     chip8->init();
     chip8->load_rom(rom_path);
-    std::cout << rom_path << std::endl;
 
     // In milliseconds. Should be defined by user in argc. Hard code it for now.
     int cycle_delay = 50;
@@ -67,7 +66,7 @@ bool initialize_window() {
     }
 
     // SCREEN_WIDTH and SCREEN_HEIGHT can be multipled by scale factor of X. Implement it in argc 
-    window = SDL_CreateWindow("Chip8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 24, SCREEN_HEIGHT * 12, SDL_WINDOW_SHOWN);    
+    window = SDL_CreateWindow("Chip8 Emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 10, SCREEN_HEIGHT * 10, SDL_WINDOW_SHOWN);    
     if (window == NULL) {
         log_SDL_error("Failed to create window");
         return false;
@@ -79,7 +78,7 @@ bool initialize_window() {
         return false;
     }
 
-    // Texture will always be 32x64
+    // Texture will always be 64x32
     texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
     if (texture == NULL) {
         log_SDL_error("Failed to create texture");
