@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <assert.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "chip8.cpp"
 
 //Screen dimension constants
