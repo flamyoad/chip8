@@ -7,12 +7,21 @@ cd build
 cmake ..
 ```
 
-#### Install SDL2
+#### Install SDL2 Linux
 ```
 apt-cache search libsdl2
 sudo apt-get install libsdl2-dev
 ```
 You should be able to find `SDL.h` in `/usr/include/SDL2`
+
+#### Install SDL2 OSX
+```
+brew install sdl2
+```
+Apple silicon 
+```
+echo "export PATH=/opt/homebrew/bin:$PATH" >> ~/.zshrc && source ~/.zshrc
+```
 
 ### Build it
 ```
@@ -23,8 +32,9 @@ cmake --build .
 ### Run it
 ```
 cd build
-./Chip8
+./Chip8 <ROM Path>
 ```
+Example: `./Chip8 ../roms/TETRIS`
 
 # References
 SDL2: http://lazyfoo.net/tutorials/SDL/index.php
