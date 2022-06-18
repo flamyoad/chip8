@@ -1,3 +1,5 @@
+![ezgif-2-7d124cadb7](https://user-images.githubusercontent.com/35066207/174448574-5261839d-77ae-49b1-8c2f-3c35eb8a19c1.gif)
+
 # Setup
 
 ### First time?
