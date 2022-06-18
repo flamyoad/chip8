@@ -1,12 +1,14 @@
 #include "chip8.h"
 #include <cstring>   
 #include <iostream>
+#include <chrono>
+#include <random>
 
 constexpr uint32_t START_ADDRESS = 0x200; // 0x000 to 0x1FF is reserved for system.
 constexpr uint32_t FONTSET_START_ADDRESS = 0x50;
 constexpr uint32_t FONTSET_SIZE = 80;
 
-Chip8::Chip8() {
+Chip8::Chip8() : randGen(std::chrono::system_clock::now().time_since_epoch().count()) {
     // Notice that only the upper half (high nibble) has value
     uint8_t fontset[FONTSET_SIZE] = {
 	    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -31,6 +33,8 @@ Chip8::Chip8() {
     for (int i = 0; i < FONTSET_SIZE; ++i)  {
         memory[FONTSET_START_ADDRESS + i] = fontset[i];
     }
+
+    randByte = std::uniform_int_distribution<uint8_t>(0, 255U);
 }
 
 void Chip8::init() {
@@ -55,8 +59,8 @@ void Chip8::load_rom(char const *file_path) {
         file.close();
 
         // Load ROM content into Chip8 memory, starting from 0x200
-        for (int i = 0; i < rom_size; ++i) {
-            std::cout << buffer[i] << std::endl;
+        for (long i = 0; i < rom_size; ++i) {
+            // std::cout << std::hex << (int)buffer[i] << std::endl;
             memory[START_ADDRESS + i] = buffer[i];
         }
 
@@ -68,9 +72,10 @@ void Chip8::emulate_cycle() {
 
     opcode = memory[pc] << 8 | memory[pc + 1];
 
-    std::cout << "Memory[pc] " << +memory[pc] << std::endl;
-    std::cout << "Memory[pc + 1] " << +memory[pc+1] << std::endl;
-    std::cout << "Opcode: " << +opcode << std::endl;
+    std::cout << "Memory[pc] " << std::hex << +memory[pc] << std::endl;
+    std::cout << "Memory[pc + 1] " << std::hex <<+memory[pc+1] << std::endl;
+    std::cout << "Opcode: " << std::hex << +opcode << std::endl;
+    std::cout << std::dec;
 
     pc += 2;
 
@@ -78,7 +83,7 @@ void Chip8::emulate_cycle() {
         case 0x0000:
             switch (opcode & 0x000F) {
                 case 0x0000: 
-                    OP_00EE(); 
+                    OP_OOE0(); 
                     break;
 
                 case 0x000E:
@@ -410,7 +415,9 @@ void Chip8::OP_BNNN() {
 
 // Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN.
 void Chip8::OP_CXNN() {
-    
+    uint8_t Vx = (opcode & 0x0F00u) >> 8u;
+	uint8_t byte = opcode & 0x00FFu;
+	registers[Vx] = randByte(randGen) & byte;
 }
 
 // Draw(Vx, Vy, N)	

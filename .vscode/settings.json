@@ -19,6 +19,7 @@
         "unordered_map": "cpp",
         "vector": "cpp",
         "iterator": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "new": "cpp"
     }
 }

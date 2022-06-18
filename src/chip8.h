@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <random>
 #include <fstream>
 
 class Chip8 {
@@ -20,6 +21,9 @@ class Chip8 {
 
         // 16bit opcode (First instruction in 1byte + Second instruction in 1byte)
         uint16_t opcode;
+
+        std::default_random_engine randGen;
+        std::uniform_int_distribution<uint8_t> randByte;
 
         Chip8();
         void init();
