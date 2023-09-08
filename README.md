@@ -25,7 +25,7 @@ Apple silicon
 echo "export PATH=/opt/homebrew/bin:$PATH" >> ~/.zshrc && source ~/.zshrc
 ```
 
-### Install SDL2 Windows
+#### Install SDL2 Windows
 ```
 msys2
 pacman -S mingw-w64-x86_64-SDL2
