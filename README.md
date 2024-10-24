@@ -6,6 +6,10 @@
 ```
 mkdir build
 cd build
+
+# Optional command for Windows to prevent using Microsoft Visual C++
+cmake -G "MinGW Makefiles" ..
+
 cmake ..
 ```
 
