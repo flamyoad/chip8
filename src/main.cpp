@@ -1,8 +1,8 @@
 #include <iostream>
 #include <string>
 #include <chrono>
-#include <SDL.h>
 #include "chip8.cpp"
+#include <SDL.h>
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 64;
